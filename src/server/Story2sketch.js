@@ -174,14 +174,11 @@ export default class Story2sketch {
         // JSON.parse + JSON.stringify hack was originally used until
         // https://github.com/GoogleChrome/puppeteer/issues/1510 was fixed, but
         // it still results in better performance.
-        const nodeJson = await page.evaluate(`
-        JSON.stringify(
+        const node = await page.evaluate(`
           page2layers
-          .getSymbol(${params})
-        );
+          .getSymbol(${params});
       `);
 
-        const node = JSON.parse(nodeJson);
         // Override existing randomly generated ids for fixed symbol reference in sketch.
         if (node.type === "symbol") {
           node.value.symbolID = `${name}:${viewport}`;
