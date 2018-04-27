@@ -43,4 +43,4 @@ export const getPage = ({ title, width, height }) => {
   page.setName(title);
 
   return page.toJSON();
-};
+};  
