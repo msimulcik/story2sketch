@@ -20,6 +20,7 @@ const defaultViewports = {
 export default class Story2sketch {
   constructor({
     output = `${process.cwd()}/dist/stories.asketch.json`,
+    outputDoc = `${process.cwd()}/dist/document.asketch.json`,
     url = "http://localhost:9001/iframe.html",
     concurrency = defaultConcurrency,
     pageTitle = "Stories",
@@ -30,6 +31,7 @@ export default class Story2sketch {
     stories
   }) {
     this.output = output;
+    this.outputDoc = outputDoc;
     this.url = url;
     this.concurrency = concurrency;
     this.pageTitle = pageTitle;
@@ -42,6 +44,7 @@ export default class Story2sketch {
 
   reset() {
     this.symbolsPerViewport = {};
+    this.documentColors = new Set();
     this.offset = 0;
     this.widestSymbolPerViewport = {};
     this.storyCount = 0;
@@ -125,6 +128,8 @@ export default class Story2sketch {
                 ...(this.symbolsPerViewport[viewport] || []),
                 symbol
               ];
+            } else {
+              this.documentColors.add(nodePerViewport[viewport].value);
             }
           });
 
@@ -171,9 +176,6 @@ export default class Story2sketch {
           querySelector: this.querySelector
         });
 
-        // JSON.parse + JSON.stringify hack was originally used until
-        // https://github.com/GoogleChrome/puppeteer/issues/1510 was fixed, but
-        // it still results in better performance.
         const node = await page.evaluate(`
           page2layers
           .getSymbol(${params});
@@ -245,7 +247,11 @@ export default class Story2sketch {
       }
     });
 
+    const doc = new Document();
+    this.documentColors.forEach(color => doc.addColor(color));
+
     fs.writeFileSync(this.output, JSON.stringify(this.sketchPage));
+    fs.writeFileSync(this.outputDoc, JSON.stringify(doc.toJSON()));
 
     console.log(
       chalk.green(
