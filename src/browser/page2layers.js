@@ -14,16 +14,17 @@ export const getSymbol = ({
   y = 0,
   querySelector = "*"
 } = {}) => {
-  let nodes;
+  let node;
 
   if (querySelector === "*") {
-    nodes = document.querySelector("#root").firstChild;
+    node = document.querySelector("#root").firstChild;
   } else {
-    nodes = document.querySelector(querySelector);
+    node = document.querySelector(querySelector);
   }
 
-  const color = nodes.getAttribute("data-sketch-color");
-  const text = nodes.getAttribute("data-sketch-text");
+  const ignoreSymbol = node.getAttribute("data-sketch-ignore-symbol");
+  const color = node.getAttribute("data-sketch-color");
+  const text = node.getAttribute("data-sketch-text");
 
   if (color) {
     return {
@@ -33,7 +34,7 @@ export const getSymbol = ({
   }
 
   if (text) {
-    const textLayer = nodeToSketchLayers(nodes).filter(
+    const textLayer = nodeToSketchLayers(node).filter(
       layer => layer instanceof Text
     )[0];
     textLayer.setName(text);
@@ -43,7 +44,14 @@ export const getSymbol = ({
     };
   }
 
-  const layer = nodeTreeToSketchGroup(nodes, {
+  if (ignoreSymbol) {
+    const texts = node.querySelectorAll('["data-sketch-text"]');
+    const colors = node.querySelectorAll('["data-sketch-color"]');
+
+    // colors.map(color => );
+  }
+
+  const layer = nodeTreeToSketchGroup(node, {
     getGroupName: getNodeName,
     getRectangleName: getNodeName
   });
