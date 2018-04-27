@@ -1,4 +1,5 @@
 import {
+  Document,
   Page,
   SymbolMaster,
   nodeTreeToSketchGroup
@@ -43,4 +44,10 @@ export const getPage = ({ title, width, height }) => {
   page.setName(title);
 
   return page.toJSON();
-};  
+};
+
+export const getDocumnet = () => {
+  const doc = new Document();
+
+  return doc.toJSON();
+};

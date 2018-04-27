@@ -45,6 +45,7 @@ export default class Story2sketch {
     this.widestSymbolPerViewport = {};
     this.storyCount = 0;
     this.sketchPage = {};
+    this.sketchDocument = {};
   }
 
   async init() {
@@ -71,7 +72,12 @@ export default class Story2sketch {
       }
     );
 
-    this.sketchPage = await this.getSketchPage();
+    const {
+      sketchPage,
+      sketchDocument
+    } = await this.getSketchPageAndDocument();
+    this.sketchPage = sketchPage;
+    this.sketchDocument = sketchDocument;
 
     console.log(`Processing ${this.storyCount} stories...`);
   }
@@ -79,7 +85,7 @@ export default class Story2sketch {
   // NB The only reason this needs to run in chrome is because html-sketchapp
   // uses imports/exports and therefore won't compile for node. html-sketchapp
   // either needs to compile down, or we can webpack the server bundle.
-  async getSketchPage() {
+  async getSketchPageAndDocument() {
     if (this.verbose) {
       console.log(chalk.gray("Getting sketch page..."));
     }
@@ -105,7 +111,15 @@ export default class Story2sketch {
       .getPage(${params})
     `);
 
-    return sketchPage;
+    const sketchDocument = await page.evaluate(`
+      page2layers
+      .getDocumnet()
+    `);
+
+    return {
+      sketchPage,
+      sketchDocument
+    };
   }
 
   async createPagePool() {
