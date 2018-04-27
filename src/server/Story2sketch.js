@@ -103,34 +103,41 @@ export default class Story2sketch {
         this.storyCount += 1;
 
         pagePool.queue(async page => {
-          const symbolPerViewport = await this.getSymbolsForStory({
+          const nodePerViewport = await this.getSymbolsForStory({
             page,
             kind,
             story
           });
 
-          const viewports = Object.keys(symbolPerViewport);
+          const viewports = Object.keys(nodePerViewport);
 
-          viewports.forEach((viewport, index) => {
-            symbolPerViewport[viewport].frame.y = this.offset;
+          viewports.forEach(viewport => {
+            if (nodePerViewport[viewport].type === "symbol") {
+              const symbol = nodePerViewport[viewport].value;
+              symbol.frame.y = this.offset;
 
-            this.widestSymbolPerViewport[viewport] = Math.max(
-              symbolPerViewport[viewport].frame.width,
-              this.widestSymbolPerViewport[viewport] || 0
-            );
+              this.widestSymbolPerViewport[viewport] = Math.max(
+                symbol.frame.width,
+                this.widestSymbolPerViewport[viewport] || 0
+              );
 
-            this.symbolsPerViewport[viewport] = [
-              ...(this.symbolsPerViewport[viewport] || []),
-              symbolPerViewport[viewport]
-            ];
+              this.symbolsPerViewport[viewport] = [
+                ...(this.symbolsPerViewport[viewport] || []),
+                symbol
+              ];
+            }
           });
 
           const heights = viewports.reduce((result, viewport) => {
-            result.push(symbolPerViewport[viewport].frame.height);
+            if (nodePerViewport[viewport].type === "symbol") {
+              result.push(nodePerViewport[viewport].value.frame.height);
+            }
             return result;
           }, []);
 
-          this.offset += Math.max(...heights) + this.symbolGutter;
+          if (heights.length) {
+            this.offset += Math.max(...heights) + this.symbolGutter;
+          }
         });
       }
     }
@@ -167,20 +174,22 @@ export default class Story2sketch {
         // JSON.parse + JSON.stringify hack was originally used until
         // https://github.com/GoogleChrome/puppeteer/issues/1510 was fixed, but
         // it still results in better performance.
-        const symbolJson = await page.evaluate(`
+        const nodeJson = await page.evaluate(`
         JSON.stringify(
           page2layers
           .getSymbol(${params})
         );
       `);
 
-        const symbol = JSON.parse(symbolJson);
+        const node = JSON.parse(nodeJson);
         // Override existing randomly generated ids for fixed symbol reference in sketch.
-        symbol.symbolID = `${name}:${viewport}`;
+        if (node.type === "symbol") {
+          node.value.symbolID = `${name}:${viewport}`;
+        }
 
         return {
           ...(await result),
-          [viewport]: symbol
+          [viewport]: node
         };
       },
       Promise.resolve({})

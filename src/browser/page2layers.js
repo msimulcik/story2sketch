@@ -17,6 +17,15 @@ export const getSymbol = ({
     nodes = document.querySelector(querySelector);
   }
 
+  const color = nodes.getAttribute("data-sketch-color");
+
+  if (color) {
+    return {
+      type: "color",
+      value: color
+    };
+  }
+
   const layer = nodeTreeToSketchGroup(nodes, {
     getGroupName: getNodeName,
     getRectangleName: getNodeName
@@ -27,5 +36,8 @@ export const getSymbol = ({
   symbol.setName(name);
   symbol.addLayer(layer);
 
-  return symbol.toJSON();
+  return {
+    type: "symbol",
+    value: symbol.toJSON()
+  };
 };
