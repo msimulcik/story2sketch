@@ -1,4 +1,9 @@
-import { SymbolMaster, nodeTreeToSketchGroup } from "@brainly/html-sketchapp";
+import {
+  SymbolMaster,
+  nodeTreeToSketchGroup,
+  nodeToSketchLayers,
+  Text
+} from "@brainly/html-sketchapp";
 
 const getNodeName = node =>
   node.id || node.className || node.nodeName.toLowerCase();
@@ -18,11 +23,23 @@ export const getSymbol = ({
   }
 
   const color = nodes.getAttribute("data-sketch-color");
+  const text = nodes.getAttribute("data-sketch-text");
 
   if (color) {
     return {
       type: "color",
       value: color
+    };
+  }
+
+  if (text) {
+    const textLayer = nodeToSketchLayers(nodes).filter(
+      layer => layer instanceof Text
+    )[0];
+    textLayer.setName(text);
+    return {
+      type: "text",
+      value: textLayer.toJSON()
     };
   }
 

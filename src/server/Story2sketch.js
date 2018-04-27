@@ -45,6 +45,7 @@ export default class Story2sketch {
   reset() {
     this.symbolsPerViewport = {};
     this.documentColors = new Set();
+    this.documentTexts = {};
     this.offset = 0;
     this.widestSymbolPerViewport = {};
     this.storyCount = 0;
@@ -128,8 +129,11 @@ export default class Story2sketch {
                 ...(this.symbolsPerViewport[viewport] || []),
                 symbol
               ];
-            } else {
+            } else if (nodePerViewport[viewport].type === "color") {
               this.documentColors.add(nodePerViewport[viewport].value);
+            } else {
+              this.documentTexts[nodePerViewport[viewport].value.name] =
+                nodePerViewport[viewport].value;
             }
           });
 
@@ -247,11 +251,21 @@ export default class Story2sketch {
       }
     });
 
-    const doc = new Document();
+    let doc = new Document();
     this.documentColors.forEach(color => doc.addColor(color));
+    doc = doc.toJSON();
+
+    Object.values(this.documentTexts).forEach(text =>
+      doc.layerTextStyles.objects.push({
+        _class: "sharedStyle",
+        ["do_objectID"]: text["do_objectID"],
+        name: text.name,
+        style: text.style
+      })
+    );
 
     fs.writeFileSync(this.output, JSON.stringify(this.sketchPage));
-    fs.writeFileSync(this.outputDoc, JSON.stringify(doc.toJSON()));
+    fs.writeFileSync(this.outputDoc, JSON.stringify(doc));
 
     console.log(
       chalk.green(
