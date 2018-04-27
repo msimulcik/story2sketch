@@ -4,6 +4,7 @@ import puppeteer from "puppeteer";
 import fs from "fs";
 import chalk from "chalk";
 import ProgressBar from "progress";
+import { Document, Page } from "@brainly/html-sketchapp";
 
 import getStorybook from "./getStorybook";
 import PagePool from "./PagePool.js";
@@ -48,6 +49,17 @@ export default class Story2sketch {
     this.sketchDocument = {};
   }
 
+  getPage = ({ title, width, height }) => {
+    const page = new Page({
+      width,
+      height
+    });
+
+    page.setName(title);
+
+    return page.toJSON();
+  };
+
   async init() {
     this.browser = await puppeteer.launch();
 
@@ -72,54 +84,13 @@ export default class Story2sketch {
       }
     );
 
-    const {
-      sketchPage,
-      sketchDocument
-    } = await this.getSketchPageAndDocument();
-    this.sketchPage = sketchPage;
-    this.sketchDocument = sketchDocument;
-
-    console.log(`Processing ${this.storyCount} stories...`);
-  }
-
-  // NB The only reason this needs to run in chrome is because html-sketchapp
-  // uses imports/exports and therefore won't compile for node. html-sketchapp
-  // either needs to compile down, or we can webpack the server bundle.
-  async getSketchPageAndDocument() {
-    if (this.verbose) {
-      console.log(chalk.gray("Getting sketch page..."));
-    }
-
-    const page = await this.browser.newPage();
-
-    await page.goto(this.url, {
-      waitUntil: "networkidle2"
-    });
-
-    await page.addScriptTag({
-      path: `${__dirname}/../browser/page2layers.bundle.js`
-    });
-
-    const params = JSON.stringify({
+    this.sketchPage = this.getPage({
       title: this.pageTitle,
       width: 1920,
       height: 5000
     });
 
-    const sketchPage = await page.evaluate(`
-      page2layers
-      .getPage(${params})
-    `);
-
-    const sketchDocument = await page.evaluate(`
-      page2layers
-      .getDocumnet()
-    `);
-
-    return {
-      sketchPage,
-      sketchDocument
-    };
+    console.log(`Processing ${this.storyCount} stories...`);
   }
 
   async createPagePool() {
