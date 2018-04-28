@@ -2,6 +2,7 @@
 
 import puppeteer from "puppeteer";
 import fs from "fs";
+import path from "path";
 import chalk from "chalk";
 import ProgressBar from "progress";
 import { Document, Page } from "@brainly/html-sketchapp";
@@ -282,7 +283,9 @@ export default class Story2sketch {
       })
     );
 
+    ensureDirectoryExistence(this.output);
     fs.writeFileSync(this.output, JSON.stringify(this.sketchPage));
+    ensureDirectoryExistence(this.outputDoc);
     fs.writeFileSync(this.outputDoc, JSON.stringify(doc));
 
     const numberOfStories = this.stories.reduce(
@@ -301,4 +304,13 @@ export default class Story2sketch {
     this.browser.close();
     process.exit();
   }
+}
+
+function ensureDirectoryExistence(filePath) {
+  var dirname = path.dirname(filePath);
+  if (fs.existsSync(dirname)) {
+    return true;
+  }
+  ensureDirectoryExistence(dirname);
+  fs.mkdirSync(dirname);
 }
