@@ -116,8 +116,9 @@ export default class Story2sketch {
           const viewports = Object.keys(nodePerViewport);
 
           viewports.forEach(viewport => {
-            if (nodePerViewport[viewport].type === "symbol") {
-              const symbol = nodePerViewport[viewport].value;
+            const node = nodePerViewport[viewport];
+            if ("symbol" in node) {
+              const symbol = node.symbol;
               symbol.frame.y = this.offset;
 
               this.widestSymbolPerViewport[viewport] = Math.max(
@@ -129,17 +130,22 @@ export default class Story2sketch {
                 ...(this.symbolsPerViewport[viewport] || []),
                 symbol
               ];
-            } else if (nodePerViewport[viewport].type === "color") {
-              this.documentColors.add(nodePerViewport[viewport].value);
-            } else {
-              this.documentTexts[nodePerViewport[viewport].value.name] =
-                nodePerViewport[viewport].value;
+            }
+
+            if ("colors" in node) {
+              node.colors.forEach(color => this.documentColors.add(color));
+            }
+
+            if ("texts" in node) {
+              node.texts.forEach(
+                text => (this.documentTexts[text.name] = text)
+              );
             }
           });
 
           const heights = viewports.reduce((result, viewport) => {
-            if (nodePerViewport[viewport].type === "symbol") {
-              result.push(nodePerViewport[viewport].value.frame.height);
+            if ("symbol" in nodePerViewport[viewport]) {
+              result.push(nodePerViewport[viewport].symbol.frame.height);
             }
             return result;
           }, []);
@@ -186,8 +192,8 @@ export default class Story2sketch {
       `);
 
         // Override existing randomly generated ids for fixed symbol reference in sketch.
-        if (node.type === "symbol") {
-          node.value.symbolID = `${name}:${viewport}`;
+        if ("symbol" in node) {
+          node.symbol.symbolID = `${name}:${viewport}`;
         }
 
         return {

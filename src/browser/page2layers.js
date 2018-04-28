@@ -8,6 +8,14 @@ import {
 const getNodeName = node =>
   node.id || node.className || node.nodeName.toLowerCase();
 
+const nodeToText = (node, name) => {
+  const textLayer = nodeToSketchLayers(node).filter(
+    layer => layer instanceof Text
+  )[0];
+  textLayer.setName(name);
+  return textLayer.toJSON();
+};
+
 export const getSymbol = ({
   name = "symbol",
   x = 0,
@@ -28,27 +36,39 @@ export const getSymbol = ({
 
   if (color) {
     return {
-      type: "color",
-      value: color
+      colors: [color]
     };
   }
 
   if (text) {
-    const textLayer = nodeToSketchLayers(node).filter(
-      layer => layer instanceof Text
-    )[0];
-    textLayer.setName(text);
     return {
-      type: "text",
-      value: textLayer.toJSON()
+      texts: [nodeToText(node)]
     };
   }
 
   if (ignoreSymbol) {
-    const texts = node.querySelectorAll('["data-sketch-text"]');
-    const colors = node.querySelectorAll('["data-sketch-color"]');
+    const colorNodes = node.querySelectorAll("[data-sketch-color]");
+    const textNodes = node.querySelectorAll("[data-sketch-text]");
 
-    // colors.map(color => );
+    const colorValues = Array.prototype.map.call(colorNodes, node =>
+      node.getAttribute("data-sketch-color")
+    );
+
+    const textValues = Array.prototype.map.call(textNodes, node => {
+      const name = node.getAttribute("data-sketch-text");
+      return nodeToText(node, name);
+    });
+
+    const res = {};
+    if (colorValues.length) {
+      res.colors = colorValues;
+    }
+
+    if (textValues.length) {
+      res.texts = textValues;
+    }
+
+    return res;
   }
 
   const layer = nodeTreeToSketchGroup(node, {
@@ -62,7 +82,6 @@ export const getSymbol = ({
   symbol.addLayer(layer);
 
   return {
-    type: "symbol",
-    value: symbol.toJSON()
+    symbol: symbol.toJSON()
   };
 };
