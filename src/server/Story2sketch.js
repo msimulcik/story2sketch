@@ -115,11 +115,16 @@ export default class Story2sketch {
 
           const viewports = Object.keys(nodePerViewport);
 
+          let inViewPortOffset;
+
           viewports.forEach(viewport => {
+            inViewPortOffset = 0;
             const node = nodePerViewport[viewport];
             if ("symbols" in node) {
               node.symbols.forEach(symbol => {
-                symbol.frame.y = this.offset;
+                symbol.frame.y = this.offset + inViewPortOffset;
+                inViewPortOffset =
+                  inViewPortOffset + symbol.frame.height + this.symbolGutter;
 
                 this.widestSymbolPerViewport[viewport] = Math.max(
                   symbol.frame.width,
@@ -146,9 +151,14 @@ export default class Story2sketch {
 
           const heights = viewports.reduce((result, viewport) => {
             if ("symbols" in nodePerViewport[viewport]) {
-              nodePerViewport[viewport].symbols.forEach(symbol =>
-                result.push(symbol.frame.height)
+              const sum = nodePerViewport[viewport].symbols.reduce(
+                (res, symbol, index) =>
+                  res +
+                  symbol.frame.height +
+                  (index > 0 ? this.symbolGutter : 0),
+                0
               );
+              result.push(sum);
             }
             return result;
           }, []);
@@ -194,14 +204,9 @@ export default class Story2sketch {
           .getSymbol(${params});
       `);
 
-        console.log("node", node);
-
-        // Override existing randomly generated ids for fixed symbol reference in sketch.
-        // if ("symbols" in node) {
-        //   node.symbols.forEach(
-        //     symbol => (symbol.symbolID = `${name}:${viewport}`)
-        //   );
-        // }
+        if ("symbols" in node) {
+          node.symbols.forEach(symbol => (symbol.frame.x = 0));
+        }
 
         return {
           ...(await result),
