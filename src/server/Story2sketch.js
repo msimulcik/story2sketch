@@ -117,19 +117,20 @@ export default class Story2sketch {
 
           viewports.forEach(viewport => {
             const node = nodePerViewport[viewport];
-            if ("symbol" in node) {
-              const symbol = node.symbol;
-              symbol.frame.y = this.offset;
+            if ("symbols" in node) {
+              node.symbols.forEach(symbol => {
+                symbol.frame.y = this.offset;
 
-              this.widestSymbolPerViewport[viewport] = Math.max(
-                symbol.frame.width,
-                this.widestSymbolPerViewport[viewport] || 0
-              );
+                this.widestSymbolPerViewport[viewport] = Math.max(
+                  symbol.frame.width,
+                  this.widestSymbolPerViewport[viewport] || 0
+                );
 
-              this.symbolsPerViewport[viewport] = [
-                ...(this.symbolsPerViewport[viewport] || []),
-                symbol
-              ];
+                this.symbolsPerViewport[viewport] = [
+                  ...(this.symbolsPerViewport[viewport] || []),
+                  symbol
+                ];
+              });
             }
 
             if ("colors" in node) {
@@ -144,8 +145,10 @@ export default class Story2sketch {
           });
 
           const heights = viewports.reduce((result, viewport) => {
-            if ("symbol" in nodePerViewport[viewport]) {
-              result.push(nodePerViewport[viewport].symbol.frame.height);
+            if ("symbols" in nodePerViewport[viewport]) {
+              nodePerViewport[viewport].symbols.forEach(symbol =>
+                result.push(symbol.frame.height)
+              );
             }
             return result;
           }, []);
@@ -191,10 +194,14 @@ export default class Story2sketch {
           .getSymbol(${params});
       `);
 
+        console.log("node", node);
+
         // Override existing randomly generated ids for fixed symbol reference in sketch.
-        if ("symbol" in node) {
-          node.symbol.symbolID = `${name}:${viewport}`;
-        }
+        // if ("symbols" in node) {
+        //   node.symbols.forEach(
+        //     symbol => (symbol.symbolID = `${name}:${viewport}`)
+        //   );
+        // }
 
         return {
           ...(await result),
@@ -273,11 +280,16 @@ export default class Story2sketch {
     fs.writeFileSync(this.output, JSON.stringify(this.sketchPage));
     fs.writeFileSync(this.outputDoc, JSON.stringify(doc));
 
+    const numberOfStories = this.stories.reduce(
+      (sum, kind) => sum + kind.stories.length,
+      0
+    );
+
     console.log(
       chalk.green(
-        `Success! ${
-          this.symbolsPerViewport[viewports[0]].length
-        } stories written to ${chalk.white.bold(this.output)}`
+        `Success! ${numberOfStories} stories written to ${chalk.white.bold(
+          this.output
+        )}`
       )
     );
 
